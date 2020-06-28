@@ -98,12 +98,12 @@ mod lockdrop {
 
         /// lock function
         #[ink(message)]
-        fn lock(&mut self, minutes: u64) -> Result<(), Error> {
+        fn lock(&mut self, seconds: u64) -> Result<(), Error> {
             if self.total_supply < self.env().transferred_balance() {
                 return Err(Error::NotEnoughBalance);
             }
 
-            let to_time = self.env().block_timestamp() + minutes;
+            let to_time = self.env().block_timestamp() + seconds;
 
             self.lock_balance
                 .insert(self.env().caller(), self.env().transferred_balance());
@@ -139,12 +139,17 @@ mod lockdrop {
         }
 
         fn send_unlock(&self) -> Result<(), Error> {
-            let lock_b: u128;
-            match self.lock_balance.get(&self.env().caller()).cloned() {
-                Some(result) => lock_b = result,
-                None => return Err(Error::NoValue),
-            }
-            if let Err(_) = self.env().transfer(self.env().caller(), lock_b) {
+            //let lock_b: Balance = self.balance_of_lock(self.env().caller());
+            //let lock_b: Balance;
+            // let lock_b: u128;
+            // match self.lock_balance.get(&self.env().caller()).cloned() {
+            //     Some(result) => lock_b = result,
+            //     None => return Err(Error::NoValue),
+            // }
+            if let Err(_) = self.env().transfer(
+                self.env().caller(),
+                self.balance_of_lock(self.env().caller()),
+            ) {
                 return Err(Error::SendFailed);
             }
             Ok(())
