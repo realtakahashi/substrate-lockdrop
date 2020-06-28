@@ -97,7 +97,7 @@ mod lockdrop {
 
         /// lock function
         #[ink(message)]
-        fn lock(&mut self, minutes: u16) -> Result<(), Error> {
+        fn lock(&mut self, _minutes: u16) -> Result<(), Error> {
             if self.total_supply < self.env().transferred_balance() {
                 return Err(Error::NotEnoughBalance);
             }
