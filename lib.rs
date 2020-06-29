@@ -120,15 +120,14 @@ mod lockdrop {
             *self.balances.get(owner).unwrap_or(&0)
         }
 
+        fn get_lock_time(&self, owner: &AccountId) -> Timestamp {
+            *self.lock_time.get(&owner).unwrap_or(&0)
+        }
+
         /// unlock function
         #[ink(message)]
         fn unlock(&mut self) -> Result<(), Error> {
-            let lock_time: u64;
-            match self.lock_time.get(&self.env().caller()).cloned() {
-                Some(result) => lock_time = result,
-                None => return Err(Error::NotSpendLockTime),
-            }
-            if self.env().block_timestamp() < lock_time {
+            if self.env().block_timestamp() < self.get_lock_time(&self.env().caller()) {
                 return Err(Error::NotSpendLockTime);
             }
             if let Err(e) = self.send_unlock() {
