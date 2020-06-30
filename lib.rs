@@ -98,21 +98,20 @@ mod lockdrop {
 
         /// lock function
         #[ink(message)]
-        fn lock(&mut self, seconds: u64) -> Result<(), Error> {
+        fn lock(&mut self, milliseconds: u64) -> Result<(), Error> {
             if self.total_supply < self.env().transferred_balance() {
                 return Err(Error::NotEnoughBalance);
             }
 
-            let to_time = self.env().block_timestamp() + seconds;
+            let to_time = self.env().block_timestamp() + milliseconds;
 
             self.lock_balance
                 .insert(self.env().caller(), self.env().transferred_balance());
             self.lock_time.insert(self.env().caller(), to_time);
             self.balances
                 .insert(self.env().caller(), self.env().transferred_balance());
-            let t_supply: u128 = *self.total_supply.get();
             self.total_supply
-                .set(t_supply - self.env().transferred_balance());
+                .set(*self.total_supply.get() - self.env().transferred_balance());
             Ok(())
         }
 
@@ -122,6 +121,16 @@ mod lockdrop {
 
         fn get_lock_time(&self, owner: &AccountId) -> Timestamp {
             *self.lock_time.get(&owner).unwrap_or(&0)
+        }
+
+        #[ink(message)]
+        fn pub_get_lock_time(&self, owner: AccountId) -> Timestamp {
+            *self.lock_time.get(&owner).unwrap_or(&0)
+        }
+
+        #[ink(message)]
+        fn pub_get_block_time(&self) -> Timestamp {
+            self.env().block_timestamp()
         }
 
         /// unlock function
@@ -162,25 +171,15 @@ mod lockdrop {
     mod tests {
         /// Imports all the definitions from the outer scope so we can use them here.
         use super::*;
-
-        /// We test if the default constructor does its job.
-        #[test]
-        fn default_works() {
-            // Note that even though we defined our `#[ink(constructor)]`
-            // above as `&mut self` functions that return nothing we can call
-            // them in test code as if they were normal Rust constructors
-            // that take no `self` argument but return `Self`.
-            let lockdrop = Lockdrop::default();
-            assert_eq!(lockdrop.get(), false);
-        }
+        use ink_core::env;
 
         /// We test a simple use case of our contract.
         #[test]
-        fn it_works() {
-            let mut lockdrop = Lockdrop::new(false);
-            assert_eq!(lockdrop.get(), false);
-            lockdrop.flip();
-            assert_eq!(lockdrop.get(), true);
+        fn lock() {
+            let accounts =
+                env::test::default_accounts::<env::DefaultEnvTypes>().expect("Cannot get accounts");
+            let mut lockdrop = Lockdrop::new(9999999999);
+            assert_eq!(lockdrop.lock(30), Ok(()));
         }
     }
 }
